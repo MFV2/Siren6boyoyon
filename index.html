@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <title>ボヨヨンチェッカーツール</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8;" />
+    </head>
+    <body>
+        <h1 style="font-size: 200%; margin: 0px">ボヨヨンチェッカーツール</h1>
+        <span style="font-size: 80%">(※バグあったらゴメン)</span><br />
+
+        <hr />
+
+        横幅:
+        <input
+            type="number"
+            size="3"
+            min="1"
+            max="99"
+            value="7"
+            id="gridAreaWidth"
+        />
+        マス / 縦幅:
+        <input
+            type="number"
+            size="3"
+            min="1"
+            max="99"
+            value="7"
+            id="gridAreaHeight"
+        />
+        マス / サンプルマップ:
+        <select id="sample">
+            <option value="none" selected>なし</option>
+        </select>
+        <br />
+        <input type="button" value="生成" id="gridAreaButton" />
+        <input
+            type="button"
+            value="計算！"
+            id="resultButton"
+            style="opacity: 0"
+        />
+        <br />
+
+        <div id="howTo" style="opacity: 0">
+            <div id="PC">
+                ボヨヨン壁の追加 or 削除: マス目を クリック<br />
+                通常壁の追加 or 削除: マス目を Shift + クリック<br />
+                水路の追加 or 削除: マス目を Ctrl + クリック<br />
+                空域の追加 or 削除: マス目を Shift + Ctrl + クリック<br />
+                また、マスを操作した後そのままドラッグすると、なぞった部分を同じマスにします。<br />
+            </div>
+            <div id="ios">
+                <label>
+                    <input type="radio" name="iosWall" value="boyo" checked />
+                    ボヨヨン壁
+                </label>
+                <label>
+                    <input type="radio" name="iosWall" value="kabe" />
+                    通常壁
+                </label>
+                <label>
+                    <input type="radio" name="iosWall" value="mizu" />
+                    水路
+                </label>
+                <label>
+                    <input type="radio" name="iosWall" value="sora" />
+                    空域
+                </label>
+                <br />
+                マス目をクリックで選択中のマスの追加 or 削除<br />
+                また、マスを操作した後そのままスライドすると、なぞった部分を同じマスにします。<br />
+            </div>
+            <br />
+
+            <div id="bangle">
+                <input id="bangleCB" type="checkbox" name="checkbox" />
+                <label for="bangleCB" class="checkbox">
+                    ボヨヨンの腕輪(チェックありで装備)
+                </label>
+            </div>
+
+            <div id="clod">
+                <input id="clodCB" type="checkbox" name="checkbox" />
+                <label for="clodCB" class="checkbox">
+                    土塊の杖使用(チェックありで最低使用回数を検索)
+                </label>
+            </div>
+            ※土塊使用フラグをオンにすると、処理がめちゃくちゃ重くなります。<br />
+            ※土塊使用フラグはボヨヨン腕輪を付けていないと意味がないよ。<br />横幅:
+            土塊の杖最大使用回数:
+            <input
+                type="number"
+                size="3"
+                min="1"
+                max="9"
+                value="3"
+                id="clodMaxUse"
+            /><br />
+            (3回あたりまでを推奨、4回とかは処理時間相当長いです)
+        </div>
+        <div id="gridArea"></div>
+        <div id="result"></div>
+        <div id="css"></div>
+
+        <hr />
+
+        <div id="rule">
+            ※仕様に関するアレソレ (推測も含まれているので注意！)<br />
+            ・反射するためには二つ並んだボヨヨン壁が必要<br />
+            ・上下左右4方向全部のボヨヨン壁に最低1回ずつ反射すると成功条件になる。<br />
+            　→5回反射すると成功判定という説もあったがこれは間違い。<br />
+            　→<a
+                href="https://twitter.com/mig60_net/status/1752358030573019364"
+                >事例1</a
+            >
+            (4回目の反射で成功判定SE)<br />
+            　→<a
+                href="https://twitter.com/StarlessTweet/status/1751502819004440787"
+                >事例2</a
+            >
+            (5回目の反射で成功判定SE)<br />
+            <br />
+            　→成功条件はあくまで「ボヨヨン壁による反射」であり、<br />
+            　　ボヨヨンの腕輪を装備して通常壁で反射してもダメ<br />
+            　→<a href="https://twitter.com/MFV2_/status/1754021606874374146"
+                >事例3</a
+            >
+            (通常壁では成功判定SEが鳴らない)<br />
+            　→<a
+                href="https://twitter.com/shikirini11/status/1754012663519322355"
+                >事例4</a
+            >
+            　<a
+                href="https://twitter.com/shikirini11/status/1754013915556855902"
+                >事例5</a
+            >
+            　<a
+                href="https://twitter.com/shikirini11/status/1754032742411759854"
+                >事例6</a
+            ><br />
+            <br />
+
+            ・成功判定がでた場合でも、通常壁に当たって終了した場合かつ壷を投げた場合は、<br />
+            　成功判定で増殖すると同時に投げた壺が割れる。<br />
+            　→<a
+                href="https://twitter.com/yuji_magnet/status/1753960067043590352"
+                >事例7</a
+            ><br />
+            <br />
+
+            ・ボヨヨン壁で反射するたびに、投擲の飛距離10マスがリセットされる。<br />
+            　→10マス以上の大きさがあるデカいボヨヨン壁部屋だと増殖不可能かも<br />
+            　→ボヨヨンの腕輪を装備して通常壁で反射した場合も同様で制限がない<br />
+            　　→ボヨヨンの腕輪を付けて通路に向かって斜めに投げると、<br />
+            　　　とんでもない位置まで反射して飛んでいく<br />
+            　　→<a
+                href="https://clips.twitch.tv/DiligentCoweringYamCoolStoryBob-_qbQf-cU2if8wMCm"
+                >事例8</a
+            ><br />
+            <br />
+            ・このツールでは、同じ反射場所と反射回数を利用した演算結果は重複して表示しないようにしています。<br />
+            　→[2, 2]の座標から右下に投げるのと、[3,
+            3]の座標から右下に投げるのは同義であると判断したため<br />
+            <br />
+            <br />
+
+            <a href="https://pug.5ch.net/test/read.cgi/gamerpg/1706856008/4"
+                >【本スレ】風来のシレン6総合 32F【Switch】</a
+            >より引用<br />
+            <div id="threads">
+                例えばこんな感じの部屋だったとする。<br />
+                <br />
+                ■＝ボヨヨン壁、□＝空間<br />
+                <br />
+                ①②③④⑤⑥⑦⑧⑨<br />
+                ■■■<span class="threadsD">□</span>■■■■■Ａ<br />
+                ■■<span class="threadsC">□</span>□<span class="threadsB">□</span
+                >□□■■Ｂ<br />
+                ■□□□□□□□■Ｃ<br />
+                ■□□□□□□□□Ｄ<br />
+                ■□□□□□□□<span class="threadsA">■</span>Ｅ<br />
+                ■■■□□□□□<span class="threadsA">■</span>Ｆ<br />
+                ■■■■■■■■■Ｇ<br />
+                <br />
+                ・反射するためには二つ並んだボヨヨン壁が必要<br />
+                ・上下左右に最低1回の反射が必要<br />
+                <br />
+                <br />
+                この場合は右の面で反射できるのが
+                <span class="threadsA">⑨Ｅ⑨Ｆ</span>
+                の部分の一か所しかない。<br />
+                なのでこの部分に反射出来る位置から投げてどうなるかを考える<br />
+                <br />
+                たとえば
+                <span class="threadsB">⑤Ｂ</span>
+                の位置から右下に投げる→右下で跳ね返ったあと
+                <span class="threadsC">③Ｂ</span>
+                で止まる。ダメ<br />
+                逆に
+                <span class="threadsC">③Ｂ</span>
+                の位置から右下に投げる→
+                <span class="threadsD">④Ａ</span>
+                から外に出ちゃう。ダメ<br />
+                <br />
+                つまりこのケースでは成立する解法はない。<br />
+                壁が狭いところを起点に考えたら可能かどうかは比較的すぐわかる。<br />
+            </div>
+        </div>
+
+        <hr />
+
+        <div id="maker">
+            ソースコードについてとかクレジットとかについては、<br />
+            <a href="https://github.com/MFV2/Siren6boyoyon">GitHub公開ページ</a>
+            を参照して下さい。<br />
+            <br />
+
+            作った人: マムルファイターV2 /
+            <a href="https://lit.link/MFV2">MFV2</a><br />
+
+            何かおかしい点があれば
+            <a href="https://twitter.com/MFV2_">Twitter</a>
+            とかでご連絡ください。<br />
+            <br />
+
+            <a href="https://www.spike-chunsoft.co.jp/shiren6/"
+                >不思議のダンジョン 風来のシレン6 とぐろ島探検録</a
+            >
+            好評発売中！<br />
+            <iframe
+                width="560"
+                height="315"
+                src="https://www.youtube.com/embed/DVHG7C-D70I?si=-HzebfX6PmMsgA-Q"
+                title="YouTube video player"
+                style="border: 0px"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen
+            ></iframe>
+        </div>
+
+        <hr />
+
+        <link href="main.css" rel="stylesheet" type="text/css" />
+        <script src="main.js" charset="UTF-8" type="module"></script>
+    </body>
+</html>

@@ -1,0 +1,30 @@
+<svg 
+	xmlns="http://www.w3.org/2000/svg"
+	width="200" 
+	height="200" 
+	viewBox="0, 0, 200, 200" 
+>
+	<circle cx="100" cy="100" r="60" fill="#fcf4b5" />
+	<polygon 
+		points="
+			50,45 
+			150,45 
+			170,120 
+			110,80 
+			30,120 
+		" 
+		fill="#7f3925"
+	/>
+	<polygon 
+		points="
+			40,40 
+			160,40 
+			180,70 
+			120,70 
+			110,55 
+			100,70 
+			20,70 
+		" 
+		fill="#d2bb3a"
+	/>
+</svg>
