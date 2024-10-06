@@ -13,17 +13,17 @@
 import { createGridArea } from "./byy00createGridArea.js";
 import { getSampleDataKeys } from "./byy01createSampleData.js";
 import { executeBoyoyonCheck } from "./byy10executeBoyoyonCheck.js";
-import { manageFlag } from "./byy91utilClass.js";
+import { ManageFlag } from "./byy91utilClass.js";
 
 // ===================================================================
 /** デバッグ用フラグ */
-manageFlag.setFlag(`test`, false);
+ManageFlag.setFlag(`test`, false);
 /** ボヨヨンの腕輪装着フラグ */
-manageFlag.setFlag(`bangle`, false);
+ManageFlag.setFlag(`bangle`, false);
 /** 土塊の杖使用フラグ */
-manageFlag.setFlag(`clod`, false);
+ManageFlag.setFlag(`clod`, false);
 /** スマホ閲覧フラグ */
-manageFlag.setFlag(
+ManageFlag.setFlag(
     `ios`,
     /(iPhone|iPad|iPod|Android)/.test(navigator.userAgent)
 );
@@ -49,10 +49,10 @@ document.getElementById(`resultButton`).addEventListener(`click`, (ev) => {
 });
 /** チェックボックス操作時のイベントリスナを設定する。 */
 document.getElementById(`bangleCB`).addEventListener(`change`, (ev) => {
-    manageFlag.setFlag(`bangle`, ev.currentTarget.checked);
+    ManageFlag.setFlag(`bangle`, ev.currentTarget.checked);
 });
 document.getElementById(`clodCB`).addEventListener(`change`, (ev) => {
-    manageFlag.setFlag(`clod`, ev.currentTarget.checked);
+    ManageFlag.setFlag(`clod`, ev.currentTarget.checked);
 });
 
 // ===================================================================

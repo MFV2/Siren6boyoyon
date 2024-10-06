@@ -5,7 +5,7 @@
  * @version 1.00<br />
  * 2024/10/06 / v1.00 / 初版作成<br />
  */
-import { manageFlag } from "./byy91utilClass.js";
+import { ManageFlag } from "./byy91utilClass.js";
 
 /**
  * @description 前回結果クリア<br />
@@ -16,6 +16,12 @@ export const clearPreviousResults = () => {
     document.querySelectorAll(`#gridArea img`).forEach((elm) => {
         elm.remove();
     });
+
+    // 土塊マスのクラス名を一度リセットする。
+    document.querySelectorAll(`.clod`).forEach((elm) => {
+        elm.classList.remove(`clod`);
+    });
+
     // 結果テキストを削除する。
     document.getElementById(`result`).innerText = ``;
 };
@@ -37,7 +43,7 @@ export const vecToStr = (vec) => {
  * @return {Boolean} true: 反射可能, false: 反射不可能
  */
 export const existsBoyoyonFlag = (wall) => {
-    const bangleFlag = manageFlag.getFlag(`bangle`);
+    const bangleFlag = ManageFlag.getFlag(`bangle`);
     return wall === `boyo` || (existsWallFlag(wall) && bangleFlag);
 };
 
@@ -64,11 +70,11 @@ export const existsUseClodFlag = (wall) => {
 /**
  * @description ログ出力<br />
  * ログを出力します。<br />
- * @param {String} _str ログ文章
+ * @param {String} str ログ文章
  */
-export const logger = (_str) => {
-    const testFlag = manageFlag.getFlag(`test`);
+export const logger = (str) => {
+    const testFlag = ManageFlag.getFlag(`test`);
     if (testFlag) {
-        console.log(_str);
+        console.log(str);
     }
 };

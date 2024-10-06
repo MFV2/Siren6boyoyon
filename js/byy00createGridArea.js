@@ -8,9 +8,9 @@
 import { createSampleData } from "./byy01createSampleData.js";
 import { clearPreviousResults } from "./byy90utilFunc.js";
 import {
-    excelColumnConverter,
-    manageFieldData,
-    manageFlag,
+    ExcelColumnConverter,
+    ManageFieldData,
+    ManageFlag,
 } from "./byy91utilClass.js";
 
 /** ドラッグ時に要素へ付加するクラス名 */
@@ -97,7 +97,7 @@ const setGridAreaSize = () => {
         w: Number(document.getElementById(`gridAreaWidth`).value) + 2,
         h: Number(document.getElementById(`gridAreaHeight`).value) + 2,
     };
-    manageFieldData.setSize(sizeData);
+    ManageFieldData.setSize(sizeData);
 };
 
 /**
@@ -109,7 +109,7 @@ const createGridRow = () => {
     let elm = document.getElementById(`gridArea`);
 
     // グリッドのマス数を取得する。
-    const sizeData = manageFieldData.getSize();
+    const sizeData = ManageFieldData.getSize();
 
     for (let j = -1; j < sizeData.h; j++) {
         // グリッドの横列を作成する。
@@ -118,10 +118,10 @@ const createGridRow = () => {
 
         for (let i = -1; i < sizeData.w; i++) {
             // グリッドを作成する。
-            const id = manageFieldData.getFieldKey(i, j);
+            const id = ManageFieldData.getFieldKey(i, j);
             const elmCls = setGridElementClass(i, j);
 
-            manageFieldData.setData(id, elmCls);
+            ManageFieldData.setData(id, elmCls);
 
             const newSpan = document.createElement(`span`);
             newSpan.textContent = setGridElementString(i, j);
@@ -148,7 +148,7 @@ const createGridRow = () => {
  */
 const setGridElementClass = (i, j) => {
     // グリッドのマス数を取得する。
-    const sizeData = manageFieldData.getSize();
+    const sizeData = ManageFieldData.getSize();
 
     // マス目ガイド用クラス名を追加する。
     if (i == -1 || j == -1) {
@@ -178,7 +178,7 @@ const setGridElementClass = (i, j) => {
 const setGridElementString = (i, j) => {
     // 縦列の場合、Excel番号を追加する。(e.g. "A", "Z", "AA")
     if (i == -1 && j >= 0) {
-        return excelColumnConverter.numToStr(j + 1);
+        return ExcelColumnConverter.numToStr(j + 1);
     }
     // 横列の場合、数字を追加する。(e.g. "1", "9", "10")
     if (i >= 0 && j == -1) {
@@ -309,7 +309,7 @@ const changeGridClassName = (elm) => {
     elm.setAttribute(`class`, `grid ${g_byy00_hoveredElementClass}`);
 
     // -------------------------------------------------------------------
-    manageFieldData.setData(elm.id, g_byy00_hoveredElementClass);
+    ManageFieldData.setData(elm.id, g_byy00_hoveredElementClass);
 };
 
 /**
@@ -326,7 +326,7 @@ const getClickGridClass = (elm, ev) => {
 
     if (elm.classList.length === 1) {
         // スマホ操作時はラジオボタンでクラス名を決定する。
-        const iosFlag = manageFlag.getFlag(`ios`);
+        const iosFlag = ManageFlag.getFlag(`ios`);
         if (iosFlag) {
             return getWallClassForIos();
         }
@@ -370,9 +370,6 @@ const getWallClassForIos = () => {
 /**
  * @description グリッドエリア確定処理<br />
  * グリッドエリアの設定を確定します。<br />
- * @param {Number} i グリッドのX座標
- * @param {Number} j グリッドのY座標
- * @return {String} グリッド要素の文字列
  */
 const finalizeGridArea = () => {
     // グリッドエリア生成時に各要素を書き換える。
@@ -381,7 +378,7 @@ const finalizeGridArea = () => {
     document.getElementById(`howTo`).style.opacity = 1;
 
     // PC用、スマホ用の操作説明をいずれか可視化させる。
-    const iosFlag = manageFlag.getFlag(`ios`);
+    const iosFlag = ManageFlag.getFlag(`ios`);
     const howToElm = document.getElementById(iosFlag ? `PC` : `ios`);
     if (howToElm) {
         howToElm.remove();
@@ -400,17 +397,18 @@ const finalizeGridArea = () => {
 /**
  * @description テスト用データ作成<br />
  * テスト用データを作成します。<br />
+ * @param {Object} sampleCase サンプルデータ
  */
 const fieldSetting = (sampleCase) => {
     for (let j = 0; j < sampleCase.field.length; j++) {
         for (let i = 0; i < sampleCase.field[j].length; i++) {
-            const elmId = manageFieldData.getFieldKey(i, j);
+            const elmId = ManageFieldData.getFieldKey(i, j);
             const elm = document.getElementById(elmId);
             const elmCls = [``, `kabe`, `boyo`, `mizu`, `sora`, `clod`][
                 sampleCase.field[j][i]
             ];
 
-            manageFieldData.setData(elmId, elmCls);
+            ManageFieldData.setData(elmId, elmCls);
             elm.setAttribute(`class`, `grid ${elmCls}`);
         }
     }

@@ -10,7 +10,7 @@
  * @description グリッドマス目データ管理クラス<br />
  * グリッドマス目データを管理するクラスです。<br />
  */
-export class manageFlag {
+export class ManageFlag {
     static list = {};
 
     /**
@@ -38,7 +38,7 @@ export class manageFlag {
  * @description グリッドマス目データ管理クラス<br />
  * グリッドマス目データを管理するクラスです。<br />
  */
-export class manageFieldData {
+export class ManageFieldData {
     static data = {};
     static size = {};
 
@@ -115,7 +115,7 @@ export class manageFieldData {
  * Excelの列番号風のアルファベット表記の相互変換を管理するクラスです。<br />
  * 参考: https://penult.hatenablog.com/entry/20110329/1301410546
  */
-export class excelColumnConverter {
+export class ExcelColumnConverter {
     /** 英字数 */
     static radix = 26;
     /** UTF-16コード */

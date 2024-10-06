@@ -11,8 +11,8 @@ import { simulationBoyoyon } from "./byy10executeBoyoyonCheck.js";
  * @description 配列組み合わせ検索<br />
  * 指定した配列の組み合わせを、1つから順に選択し、条件に一致するものを見つけるまでループします。<br />
  * 条件に一致する組み合わせが見つからない場合、要素数を増やして再度組み合わせを確認します。<br />
- * @param {Array} clodList 組み合わせを生成するための元の配列
- * @return {Array} 条件に一致する組み合わせ 見つからない場合は空配列を返却
+ * @param {Array<Object>} clodList 組み合わせを生成するための元の配列
+ * @return {Array<Object>} 成功例(反射情報オブジェクト)リスト, 見つからない場合は空配列を返却
  */
 export const findValidCombination = (clodList) => {
     let okList = [];
@@ -34,16 +34,17 @@ export const findValidCombination = (clodList) => {
             const result = simulationBoyoyon(combination);
 
             if (result.length > 0) {
-                // 条件に一致する組み合わせを結果に追加する。
+                // 条件に一致する組み合わせを成功例リストに追加する。
                 okList = okList.concat(result);
             }
         }
 
-        // 条件に一致する組み合わせが見つかれば結果を返却する。
+        // 条件に一致する組み合わせが見つかれば成功例リストを返却する。
         if (okList.length > 0) {
             return okList;
         }
     }
+
     // 見つからない場合は空配列を返却する。
     return okList;
 };
@@ -51,9 +52,9 @@ export const findValidCombination = (clodList) => {
 /**
  * @description 配列組み合わせ生成<br />
  * 配列から指定した数の要素の組み合わせを再帰的に生成します。
- * @param {Array} array 元の配列
+ * @param {Array<Object>} array 元の配列
  * @param {Number} n 選択する要素の数
- * @return {Array} 生成された全ての組み合わせを含む配列
+ * @return {Array<Object>} 生成された全ての組み合わせを含む配列
  */
 const getCombinations = (array, n) => {
     // 基本ケース: 選択する要素が1つの場合、その要素を単独の配列にして返却する。

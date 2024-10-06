@@ -6,7 +6,7 @@
  * 2024/10/06 / v1.00 / 初版作成<br />
  */
 import { logger, vecToStr } from "./byy90utilFunc.js";
-import { excelColumnConverter, manageFieldData } from "./byy91utilClass.js";
+import { ExcelColumnConverter, ManageFieldData } from "./byy91utilClass.js";
 
 /** 計算結果データ */
 let g_byy20_resultData;
@@ -14,7 +14,7 @@ let g_byy20_resultData;
 /**
  * @description 計算結果表示<br />
  * 計算結果を表示します。<br />
- * @param {Array} okList 成功した反射地点リスト
+ * @param {Array<Object>} okList 成功した反射地点(反射情報オブジェクト)リスト
  */
 export const displayResults = (okList) => {
     const targetElm = document.getElementById(`result`);
@@ -58,7 +58,7 @@ export const displayResults = (okList) => {
 
             const str = `
                 開始位置 [
-                    ${excelColumnConverter.numToStr(data.stGrid.y + 1)} 
+                    ${ExcelColumnConverter.numToStr(data.stGrid.y + 1)} 
                     ${data.stGrid.x + 1}
                 ]マス (
                     x${data.stGrid.x + 1}, 
@@ -91,7 +91,7 @@ export const displayResults = (okList) => {
 const createTraceAnm = (idx) => {
     // -------------------------------------------------------------------
     const data = g_byy20_resultData[idx];
-    const elmId = manageFieldData.getFieldKey(data.stGrid.x, data.stGrid.y);
+    const elmId = ManageFieldData.getFieldKey(data.stGrid.x, data.stGrid.y);
     const gridElm = document.getElementById(elmId);
     const allCnt = data.pos[data.pos.length - 1].cnt + 3;
     let lastGrid = {};
@@ -109,7 +109,7 @@ const createTraceAnm = (idx) => {
 
     // 土塊マスに対してクラス名をセットする。
     data.clodList.forEach((clod) => {
-        const clodElmId = manageFieldData.getFieldKey(clod.x, clod.y);
+        const clodElmId = ManageFieldData.getFieldKey(clod.x, clod.y);
         const clodGridElm = document.getElementById(clodElmId);
         clodGridElm.classList.add(`clod`);
     });
@@ -121,13 +121,13 @@ const createTraceAnm = (idx) => {
     const offset_h = gridElm.offsetHeight;
 
     data.pos.forEach((obj) => {
+        // ログを出力する。
         logger(`// -----------------------------`);
-        logger(
-            `${data.stGrid.x}, ${data.stGrid.y} / 
-            ${obj.grid.x}, ${obj.grid.y} / 
-            ${obj.vec.x / 2}, ${obj.vec.y / 2}
-            `.replace(/[\r\n\t]/g, ``)
-        );
+        let log = `${data.stGrid.x},_${data.stGrid.y}_/_
+            ${obj.grid.x},_${obj.grid.y}_/_
+            ${obj.vec.x / 2},_${obj.vec.y / 2}
+        `.replace(/[\r\n\t ]/g, ``);
+        logger(log);
         logger(obj.grid.x + obj.vec.x / 2 - data.stGrid.x);
         logger(obj.grid.y + obj.vec.y / 2 - data.stGrid.y);
 
@@ -138,8 +138,10 @@ const createTraceAnm = (idx) => {
         let y = (obj.grid.y + obj.vec.y / 2 - data.stGrid.y) * offset_h;
         lastGrid = { x: x, y: y };
 
-        cssStr += `${per}% { transform: translate(${x}px, ${y}px); }`;
+        cssStr += `
+            ${per}% { transform: translate(${x}px, ${y}px); }`;
     });
+    logger(cssStr);
 
     // 作成したcss構文を追加する。
     document.getElementById(`css`).innerHTML = `

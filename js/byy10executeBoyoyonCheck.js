@@ -13,8 +13,9 @@ import {
     existsUseClodFlag,
     existsWallFlag,
     logger,
+    vecToStr,
 } from "./byy90utilFunc.js";
-import { manageFieldData, manageFlag } from "./byy91utilClass.js";
+import { ManageFieldData, ManageFlag } from "./byy91utilClass.js";
 
 /**
  * @description ボヨヨン壁チェック実行<br />
@@ -28,20 +29,20 @@ export const executeBoyoyonCheck = () => {
     let result = simulationBoyoyon();
 
     // 土塊の杖使用フラグがOnの場合
-    const bangleFlag = manageFlag.getFlag(`bangle`);
-    const clodFlag = manageFlag.getFlag(`clod`);
+    const bangleFlag = ManageFlag.getFlag(`bangle`);
+    const clodFlag = ManageFlag.getFlag(`clod`);
     if (result.length == 0 && bangleFlag && clodFlag) {
         // 土塊使用マスを記録するリストを定義します。
         let clodList = [];
 
         // グリッドのマス数を取得する。
-        const sizeData = manageFieldData.getSize();
+        const sizeData = ManageFieldData.getSize();
 
         // グリッド全体を走査する。
         for (let j = 0; j < sizeData.h; j++) {
             for (let i = 0; i < sizeData.w; i++) {
-                const id = manageFieldData.getFieldKey(i, j);
-                const grid = manageFieldData.getData(id);
+                const id = ManageFieldData.getFieldKey(i, j);
+                const grid = ManageFieldData.getData(id);
                 if (existsUseClodFlag(grid)) {
                     clodList.push({ x: i, y: j });
                 }
@@ -64,27 +65,29 @@ export const executeBoyoyonCheck = () => {
 /**
  * @description ボヨヨン壁シミュレーション実行<br />
  * ボヨヨン壁シミュレーション処理を実行します。<br />
+ * @param {Array<Object>} clodList 土塊の杖使用マスリスト
+ * @return {Array<Object>} 成功例(反射情報オブジェクト)リスト, 見つからない場合は空配列を返却
  */
 export const simulationBoyoyon = (clodList = []) => {
     let okList = [];
     const reg = /"cnt":(.*?)\}/g;
 
     // 土塊マス生成前のオリジナルデータを保持する。
-    const originFieldData = structuredClone(manageFieldData.getObject());
+    const originFieldData = structuredClone(ManageFieldData.getObject());
 
     // 土塊のマスを壁にする。
     clodList.forEach((clod) => {
-        const id = manageFieldData.getFieldKey(clod.x, clod.y);
-        manageFieldData.setData(id, `clod`);
+        const id = ManageFieldData.getFieldKey(clod.x, clod.y);
+        ManageFieldData.setData(id, `clod`);
     });
 
     // グリッド全体を走査する。
-    const sizeData = manageFieldData.getSize();
+    const sizeData = ManageFieldData.getSize();
     for (let j = 0; j < sizeData.h; j++) {
         for (let i = 0; i < sizeData.w; i++) {
             // シレンが立てない場所はスキップする。
-            const id = manageFieldData.getFieldKey(i, j);
-            if (manageFieldData.getData(id) != ``) {
+            const id = ManageFieldData.getFieldKey(i, j);
+            if (ManageFieldData.getData(id) != ``) {
                 continue;
             }
 
@@ -98,13 +101,7 @@ export const simulationBoyoyon = (clodList = []) => {
 
             directions.forEach((vec) => {
                 // 反射計算を行う。
-                const result = calculateReflection(
-                    i,
-                    j,
-                    manageFieldData,
-                    vec,
-                    clodList
-                );
+                const result = calculateReflection(i, j, vec, clodList);
 
                 // 結果が存在する場合
                 if (result) {
@@ -124,7 +121,7 @@ export const simulationBoyoyon = (clodList = []) => {
     }
 
     // 保持したオリジナルデータを設定する。(土塊マスをリセットする)
-    manageFieldData.setObject(originFieldData);
+    ManageFieldData.setObject(originFieldData);
 
     return okList;
 };
@@ -138,151 +135,294 @@ export const simulationBoyoyon = (clodList = []) => {
  * @param {Object} clodList 土塊の杖を振ったマス
  * @return {Object|null} - 反射情報オブジェクト（反射が成功した場合）またはnull
  */
-const calculateReflection = (i, j, fieldData, startVec, clodList) => {
-    let nowVec = structuredClone(startVec);
-    let boundPos = [];
-    let bound = [];
-    let outFlag = false;
-    let stopFlag = false;
-    let nowGrid = { x: i, y: j };
-    let nextGrid;
-    let cnt = 0;
-    let distance = 0;
+const calculateReflection = (i, j, startVec, clodList) => {
+    /** 反射計算変数管理オブジェクト */
+    let calcObj = {
+        /** 現在のベクトル */
+        nowVec: structuredClone(startVec),
+        /** 反射したマス情報 */
+        boundPos: [],
+        /** 反射済の方角 */
+        bouncedDirections: [],
+        /** 場外判定 */
+        outFlag: false,
+        /** 終了判定 */
+        stopFlag: false,
+        /** 開始時のマス位置 */
+        startGrid: { x: i, y: j },
+        /** 現在のマス位置 */
+        nowGrid: { x: i, y: j },
+        /** 次回のマス位置 */
+        nextGrid: null,
+        /** 飛んだマス数(総計) */
+        cnt: 0,
+        /** 飛んだマス数(10マスカウント) */
+        distance: 0,
+        /** ログ出力用 */
+        log: null,
+    };
 
     // グリッドのマス数を取得する。
-    const sizeData = manageFieldData.getSize();
+    const sizeData = ManageFieldData.getSize();
 
-    while (1000 > cnt++) {
-        nextGrid = { x: nowGrid.x + nowVec.x, y: nowGrid.y + nowVec.y };
+    // ログを出力する。
+    calcObj.log = `// --start:_
+        x${calcObj.nowGrid.x},_
+        y${calcObj.nowGrid.y},_
+        vec{${vecToStr(startVec)}}
+        -----
+    `.replace(/[\r\n\t ]/g, ``);
+    logger(calcObj.log);
 
-        // 10マス飛んだら終了する。
-        if (distance >= 10) {
-            stopFlag = true;
-        }
+    while (1000 > calcObj.cnt++) {
+        calcObj.nextGrid = {
+            x: calcObj.nowGrid.x + calcObj.nowVec.x,
+            y: calcObj.nowGrid.y + calcObj.nowVec.y,
+        };
+
+        // ログを出力する。
+        calcObj.log = `now:_
+            x${calcObj.nowGrid.x},_
+            y${calcObj.nowGrid.y}_/_
+            next:_
+            x${calcObj.nextGrid.x},_
+            y${calcObj.nextGrid.y}
+        `.replace(/[\r\n\t ]/g, ``);
+        logger(calcObj.log);
 
         // ブラジルに飛んでいったら終了する。
-        if (
-            nextGrid.x < 0 ||
-            nextGrid.x >= sizeData.w ||
-            nextGrid.y < 0 ||
-            nextGrid.y >= sizeData.h
-        ) {
-            outFlag = true;
-            stopFlag = true;
-        }
-
-        // 元の位置に戻ったら終了する。
-        if (nextGrid.x === i && nextGrid.y === j) {
-            stopFlag = true;
+        if (isOutOfBounds(calcObj.nextGrid, sizeData)) {
+            calcObj.outFlag = true;
+            calcObj.stopFlag = true;
         }
 
         // 進行方向3方向のマス目の種類を取得する。
-        const frontId = manageFieldData.getFieldKey(nextGrid.x, nextGrid.y);
-        const frontGrid = manageFieldData.getData(frontId);
-        const verticalId = manageFieldData.getFieldKey(nowGrid.x, nextGrid.y);
-        const verticalGrid = manageFieldData.getData(verticalId);
-        const horizontalId = manageFieldData.getFieldKey(nextGrid.x, nowGrid.y);
-        const horizontalGrid = manageFieldData.getData(horizontalId);
+        const grids = getGridInfo(calcObj.nowGrid, calcObj.nextGrid);
 
         // 進行方向3方向の反射フラグを判定する。
-        const frontReflection = existsBoyoyonFlag(frontGrid);
-        const verticalReflection = existsBoyoyonFlag(verticalGrid);
-        const horizontalReflection = existsBoyoyonFlag(horizontalGrid);
+        const reflections = getReflectionFlag(grids);
 
-        // ボヨヨンの腕輪無しで壁に当たったら終了する。
-        const bangleFlag = manageFlag.getFlag(`bangle`);
-        if (existsWallFlag(frontGrid) && !bangleFlag) {
-            stopFlag = true;
-        }
-
-        // 角に当たったら終了する。
-        if (
-            (frontReflection && verticalReflection && horizontalReflection) ||
-            (frontReflection && !verticalReflection && !horizontalReflection)
-        ) {
-            stopFlag = true;
-        }
+        // 終了判定を行う。
+        calcObj.stopFlag =
+            calcObj.stopFlag || isStopConditionMet(calcObj, grids);
 
         // 正面の壁に反射フラグが付いている場合
-        if (!stopFlag && frontReflection) {
-            // 角ではない場合 (垂直方向で反射)
-            if (!verticalGrid && horizontalReflection) {
-                logger(`bound!!`);
-
-                distance = 0;
-                boundPos.push({
-                    cnt,
-                    grid: { ...nowGrid },
-                    vec: { ...nowVec },
-                });
-
-                // 成功判定を追加する。
-                let boundVec = nowVec.x == 1 ? `right` : `left`;
-                if (!bound.includes(boundVec) && frontGrid === `boyo`) {
-                    bound.push(boundVec);
-                }
-
-                // ベクトルを反転する。
-                nowVec.x *= -1;
-                nextGrid.x = nowGrid.x;
+        if (!calcObj.stopFlag && reflections.front) {
+            // 角に当たったら終了する。
+            if (isHitCorner(reflections)) {
+                calcObj.stopFlag = true;
             }
 
-            // 角ではない場合 (水平方向で反射)
-            else if (verticalGrid && !horizontalReflection) {
-                logger(`bound!!`);
-
-                distance = 0;
-                boundPos.push({
-                    cnt,
-                    grid: { ...nowGrid },
-                    vec: { ...nowVec },
-                });
-
-                // 成功判定を追加する。
-                const boundVec = nowVec.y == 1 ? `down` : `up`;
-                if (!bound.includes(boundVec) && frontGrid === `boyo`) {
-                    bound.push(boundVec);
-                }
-
-                // ベクトルを反転する。
-                nowVec.y *= -1;
-                nextGrid.y = nowGrid.y;
-            }
+            // 斜め反射判定を行う。
+            addBound(calcObj, grids, reflections);
         }
 
         // 終了判定の場合
-        if (stopFlag) {
-            // 終了位置の座標情報を追加する。
-            boundPos.push({
-                cnt: cnt - 0.5,
-                grid: { ...nowGrid },
-                vec: { x: 0, y: 0 },
-            });
-
-            // 成功判定(上下左右で反射)の場合
-            if (bound.length == 4) {
-                // 最終地点が通常壁もしくは場外の場合、フラグを付与する。(警告文表示のため)
-                let endFlag = ``;
-                if (outFlag) {
-                    endFlag = `out`;
-                }
-                if (existsWallFlag(frontGrid)) {
-                    endFlag = `kabe`;
-                }
-
-                return {
-                    stGrid: { x: i, y: j },
-                    stVec: { ...startVec },
-                    pos: boundPos,
-                    endFlag: endFlag,
-                    clodList: clodList,
-                };
-            }
+        if (calcObj.stopFlag) {
+            // 計算判定結果を返却する。
+            return stopBound(calcObj, grids, startVec, clodList);
         }
 
         // 次のマスに移動する。
-        nowGrid = { ...nextGrid };
-        distance++;
+        calcObj.nowGrid = structuredClone(calcObj.nextGrid);
+        calcObj.distance++;
     }
+
+    // 計算判定結果を失敗で返却する。
     return null;
+};
+
+/**
+ * @description 場外チェック
+ * グリッドがフィールド外かを判定します。
+ * @param {Object} grid 判定するグリッド座標
+ * @param {Object} sizeData フィールドのサイズデータ
+ * @return {Boolean} true: 場外, false: 場内
+ */
+const isOutOfBounds = (grid, sizeData) => {
+    return (
+        grid.x < 0 || grid.x >= sizeData.w || grid.y < 0 || grid.y >= sizeData.h
+    );
+};
+
+/**
+ * @description 角チェック
+ * 次のマスが角かを判定します。
+ * @param {Object} reflections 進行方向3方向の反射フラグ
+ * @return {Boolean} true: 角, false: 角じゃない
+ */
+const isHitCorner = (reflections) => {
+    return (
+        (reflections.vertical && reflections.horizontal) ||
+        (!reflections.vertical && !reflections.horizontal)
+    );
+};
+
+/**
+ * @description 反射終了チェック
+ * グリッドの終了条件を判定します。
+ * @param {Object} calcObj 反射計算変数管理オブジェクト
+ * @param {Object} grids 進行方向3方向のグリッド情報
+ * @return {Boolean} true: 終了, false: 継続
+ */
+const isStopConditionMet = (calcObj, grids) => {
+    let stopFlag = false;
+
+    // 10マス飛んだら終了する。
+    if (calcObj.distance >= 10) {
+        stopFlag = true;
+    }
+
+    // 元の位置に戻ったら終了する。
+    if (
+        calcObj.nextGrid.x === calcObj.startGrid.x &&
+        calcObj.nextGrid.y === calcObj.startGrid.y
+    ) {
+        stopFlag = true;
+    }
+
+    // ボヨヨンの腕輪無しで壁に当たったら終了する。
+    const bangleFlag = ManageFlag.getFlag(`bangle`);
+    if (existsWallFlag(grids.front) && !bangleFlag) {
+        stopFlag = true;
+    }
+
+    return stopFlag;
+};
+
+/**
+ * @description 斜め反射成功判定追加<br />
+ * 斜め反射成功判定を追加します。<br />
+ * @param {Object} calcObj 反射計算変数管理オブジェクト
+ * @param {Object} grids 進行方向3方向のグリッド情報
+ * @param {Object} reflections 進行方向3方向の反射フラグ
+ */
+const addBound = (calcObj, grids, reflections) => {
+    // 角ではない場合 (垂直方向で反射)
+    if (!grids.vertical && reflections.horizontal) {
+        logger(`bound!!`);
+
+        calcObj.distance = 0;
+        calcObj.boundPos.push({
+            cnt: structuredClone(calcObj.cnt),
+            grid: structuredClone(calcObj.nowGrid),
+            vec: structuredClone(calcObj.nowVec),
+        });
+
+        // 成功判定を追加する。
+        const boundVec = calcObj.nowVec.x == 1 ? `right` : `left`;
+        if (
+            !calcObj.bouncedDirections.includes(boundVec) &&
+            grids.front === `boyo`
+        ) {
+            calcObj.bouncedDirections.push(boundVec);
+        }
+
+        // ベクトルを反転する。
+        calcObj.nowVec.x *= -1;
+        calcObj.nextGrid.x = calcObj.nowGrid.x;
+
+        return true;
+    }
+
+    // 角ではない場合 (水平方向で反射)
+    if (grids.vertical && !reflections.horizontal) {
+        logger(`bound!!`);
+
+        calcObj.distance = 0;
+        calcObj.boundPos.push({
+            cnt: structuredClone(calcObj.cnt),
+            grid: structuredClone(calcObj.nowGrid),
+            vec: structuredClone(calcObj.nowVec),
+        });
+
+        // 成功判定を追加する。
+        const boundVec = calcObj.nowVec.y == 1 ? `down` : `up`;
+        if (
+            !calcObj.bouncedDirections.includes(boundVec) &&
+            grids.front === `boyo`
+        ) {
+            calcObj.bouncedDirections.push(boundVec);
+        }
+
+        // ベクトルを反転する。
+        calcObj.nowVec.y *= -1;
+        calcObj.nextGrid.y = calcObj.nowGrid.y;
+    }
+};
+
+/**
+ * @description 反射終了<br />
+ * 反射成功判定を追加します。<br />
+ * @param {Object} calcObj 反射計算変数管理オブジェクト
+ * @param {Object} grids 進行方向3方向のグリッド情報
+ * @param {Object} startVec 開始時の方向を表すベクトル
+ * @param {Object} clodList 土塊の杖を振ったマス
+ * @return {Object|null} 計算判定結果
+ */
+const stopBound = (calcObj, grids, startVec, clodList) => {
+    // 終了位置の座標情報を追加する。
+    calcObj.boundPos.push({
+        cnt: structuredClone(calcObj.cnt) - 0.5,
+        grid: structuredClone(calcObj.nowGrid),
+        vec: { x: 0, y: 0 },
+    });
+
+    // 成功判定(上下左右で反射)の場合
+    if (calcObj.bouncedDirections.length == 4) {
+        // 最終地点が通常壁もしくは場外の場合、フラグを付与する。(警告文表示のため)
+        let endFlag = ``;
+        if (calcObj.outFlag) {
+            endFlag = `out`;
+        }
+        if (existsWallFlag(grids.front)) {
+            endFlag = `kabe`;
+        }
+
+        return {
+            stGrid: calcObj.startGrid,
+            stVec: structuredClone(startVec),
+            pos: calcObj.boundPos,
+            endFlag: endFlag,
+            clodList: clodList,
+        };
+    }
+
+    return null;
+};
+
+/**
+ * @description グリッド情報取得<br />
+ * 進行方向3方向のマスの種類を取得します。<br />
+ * @param {Object} nowGrid 現在のグリッド座標
+ * @param {Object} nextGrid 次のグリッド座標
+ * @return {Object} 進行方向3方向のグリッド情報
+ */
+const getGridInfo = (nowGrid, nextGrid) => {
+    const frontId = ManageFieldData.getFieldKey(nextGrid.x, nextGrid.y);
+    const frontGrid = ManageFieldData.getData(frontId);
+    const verticalId = ManageFieldData.getFieldKey(nowGrid.x, nextGrid.y);
+    const verticalGrid = ManageFieldData.getData(verticalId);
+    const horizontalId = ManageFieldData.getFieldKey(nextGrid.x, nowGrid.y);
+    const horizontalGrid = ManageFieldData.getData(horizontalId);
+
+    return {
+        front: frontGrid,
+        vertical: verticalGrid,
+        horizontal: horizontalGrid,
+    };
+};
+
+/**
+ * @description 反射フラグ取得<br />
+ * 進行方向3方向の反射フラグを取得します。<br />
+ * @param {Object} grids 進行方向3方向のグリッド情報
+ * @return {Object} 進行方向3方向の反射フラグ
+ */
+const getReflectionFlag = (grids) => {
+    return {
+        front: existsBoyoyonFlag(grids.front),
+        vertical: existsBoyoyonFlag(grids.vertical),
+        horizontal: existsBoyoyonFlag(grids.horizontal),
+    };
 };
