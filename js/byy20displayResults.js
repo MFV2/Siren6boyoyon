@@ -3,6 +3,7 @@
  * @description ボヨヨンチェッカーツール 計算結果表示関数群
  * @author マムルファイターV2 / MFV2
  * @version 1.00<br />
+ * 2024/10/06 / v1.02 / ソースコード整理、JsDoc記載修正。<br />
  * 2024/10/06 / v1.00 / 初版作成<br />
  */
 import { logger, vecToStr } from "./byy90utilFunc.js";
