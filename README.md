@@ -1,7 +1,7 @@
 # ボヨヨンチェッカーツール
 
 ![Coding languages](https://img.shields.io/badge/javascript-blue?logo=javascript)
-[![GitHub License](https://img.shields.io/badge/license-MIT)](LICENSE.md)
+[![GitHub License](https://img.shields.io/badge/license-MIT-green)](LICENSE.md)
 
 ## What is this / このツールについて
 
