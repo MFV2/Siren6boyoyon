@@ -259,7 +259,7 @@ const onGridMouseMove = (ev) => {
 
 /**
  * @description グリッドタッチムーブ処理<br />
- * グリッド要素でマウスムーブされた際に呼び出されるイベント処理です。<br />
+ * グリッド要素でタッチムーブされた際に呼び出されるイベント処理です。<br />
  * @return {Object} ev touchmoveイベント
  */
 const onGridTouchMove = (ev) => {

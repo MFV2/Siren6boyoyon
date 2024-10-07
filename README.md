@@ -1,7 +1,7 @@
 # ボヨヨンチェッカーツール
 
 ![Coding languages](https://img.shields.io/badge/javascript-blue?logo=javascript)
-[![GitHub](https://img.shields.io/github/license/MFV2/LiveStreamAudioRandomizer)](https://github.com/MFV2/LiveStreamAudioRandomizer/blob/main/LICENSE.md)
+[![GitHub License](https://img.shields.io/badge/license-MIT)](LICENSE.md)
 
 ## What is this / このツールについて
 
